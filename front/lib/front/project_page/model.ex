@@ -162,6 +162,8 @@ defmodule Front.ProjectPage.Model do
       {:ok, organization} = Async.await(fetch_organization)
       {:ok, project} = Async.await(fetch_project)
 
+      workflows = pin_default_branch_workflow(workflows, workflow_fetch_error, params, project)
+
       previous = if previous_page_token != "", do: previous_page_token, else: nil
       next = if next_page_token != "", do: next_page_token, else: nil
       newest = if params.page_token == "", do: false, else: true
@@ -202,6 +204,57 @@ defmodule Front.ProjectPage.Model do
   defp first_page?(params), do: params.page_token == ""
   defp everyones_page?(params), do: params.user_page? == false
   defp cacheable_mode?(params), do: (params.list_mode || "latest") == "latest"
+
+  defp pin_default_branch_workflow(workflows, workflow_fetch_error, params, project) do
+    if pin_default_branch?(workflow_fetch_error, params, project) do
+      default_branch = project.repo_default_branch
+
+      if first_page?(params) do
+        pin_first_page(workflows, params.project_id, default_branch)
+      else
+        Enum.reject(workflows, &default_branch_workflow?(&1, default_branch))
+      end
+    else
+      workflows
+    end
+  end
+
+  defp pin_default_branch?(workflow_fetch_error, params, project) do
+    is_nil(workflow_fetch_error) and
+      (params.list_mode || "latest") != "all_pipelines" and
+      is_binary(project && project.repo_default_branch) and
+      project.repo_default_branch != "" and
+      branch_refs_included?(params.ref_types)
+  end
+
+  defp branch_refs_included?(ref_types) when ref_types in [nil, []], do: true
+  defp branch_refs_included?(ref_types), do: Enum.member?(ref_types, "branch")
+
+  defp pin_first_page(workflows, project_id, default_branch) do
+    {pinned, rest} = Enum.split_with(workflows, &default_branch_workflow?(&1, default_branch))
+
+    case pinned do
+      [] -> prepend_missing_default_branch(rest, project_id, default_branch)
+      _ -> pinned ++ rest
+    end
+  end
+
+  defp prepend_missing_default_branch(workflows, project_id, default_branch) do
+    case Models.Workflow.find_latest(project_id: project_id, branch_name: default_branch) do
+      nil ->
+        workflows
+
+      workflow ->
+        case Decorators.Workflow.decorate_one(workflow) do
+          nil -> workflows
+          decorated -> [decorated | workflows]
+        end
+    end
+  end
+
+  defp default_branch_workflow?(workflow, default_branch) do
+    workflow.type == "branch" and workflow.branch_name == default_branch
+  end
 
   defp list_workflows(params) do
     case params.list_mode do
