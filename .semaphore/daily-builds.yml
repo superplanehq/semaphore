@@ -3503,9 +3503,6 @@ blocks:
             - cache store deps-$ERLANG_VERSION-$ELIXIR_VERSION-$(checksum mix.lock) deps
             - cache store build-$ERLANG_VERSION-$ELIXIR_VERSION-$(checksum mix.lock) _build
 promotions:
-  - name: Generate Helm Chart
-    pipeline_file: generate-helm-chart.yml
-    deployment_target: github-packages
   - name: SSL Certificate - Generate
     pipeline_file: certificate-generate.yml
     deployment_target: provision-test-env
