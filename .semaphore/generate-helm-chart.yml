@@ -90,9 +90,6 @@ blocks:
             - sem-context put chart_package_name=$(basename $CHART_PATH) --force
 
 promotions:
-  - name: Release
-    pipeline_file: release.yml
-    deployment_target: github-packages
   - name: Cloud Environment
     pipeline_file: env-create.yml
     deployment_target: provision-test-env
