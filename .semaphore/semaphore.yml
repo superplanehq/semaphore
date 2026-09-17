@@ -3868,7 +3868,6 @@ blocks:
 promotions:
   - name: SSL Certificate - Generate
     pipeline_file: certificate-generate.yml
-    deployment_target: provision-test-env
     parameters:
       env_vars:
         - name: CLOUD_TEST_ENV_PREFIX
@@ -3885,7 +3884,6 @@ promotions:
             - vmaksimovic
   - name: SSL Certificate - Delete
     pipeline_file: certificate-delete.yml
-    deployment_target: provision-test-env
     parameters:
       env_vars:
         - name: CLOUD_TEST_ENV_PREFIX
@@ -3902,7 +3900,6 @@ promotions:
             - vmaksimovic
   - name: Cloud Environment - Destroy
     pipeline_file: env-destroy.yml
-    deployment_target: provision-test-env
     parameters:
       env_vars:
         - name: CLOUD_TEST_ENV_PREFIX
@@ -3925,7 +3922,6 @@ promotions:
           default_value: single-vm
   - name: Cloud Environment - E2E
     pipeline_file: env-e2e.yml
-    deployment_target: provision-test-env
     parameters:
       env_vars:
         - name: CLOUD_TEST_ENV_PREFIX
